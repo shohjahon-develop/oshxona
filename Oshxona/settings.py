@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'payments',
     'reports',
     'roles',
+    'drf_yasg',
     'rest_framework',
 ]
 
