@@ -1,8 +1,11 @@
+from rest_framework.permissions import IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Count, Sum
 from django.utils.timezone import now
 from datetime import timedelta
+
+from users.models import User
 from .serializers import OrderStatisticsSerializer, PopularDishesSerializer, StaffActivitySerializer
 from orders.models import Order # Order va Payment modellari qaysi app ichida bo‘lsa, o‘sha joydan import qilish kerak
 from payments.models import Payment
@@ -51,16 +54,35 @@ class PopularDishesView(APIView):
         serializer = PopularDishesSerializer(popular_dishes, many=True)
         return Response(serializer.data)
 
-class StaffActivityView(APIView):
-    """Hodimlarning buyurtma bajarish faolligi"""
+
+class EmployeeActivityReport(APIView):
+    permission_classes = [IsAdminUser]  # Faqat adminlar ko‘rishi mumkin
 
     def get(self, request):
-        from users.models import User  # Staff modeli kerak
-        staff_activity = (
-            User.objects.values("name")
-            .annotate(total_orders=Count("order"))
-            .order_by("-total_orders")[:5]
-        )
+        # Faqat hodim bo‘lgan userlarni olish
+        employees = User.objects.filter(role__in=["waiter", "chef", "cashier", "cleaner"])
 
-        serializer = StaffActivitySerializer(staff_activity, many=True)
-        return Response(serializer.data)
+        data = []
+
+        for employee in employees:
+            # Hodim bajargan buyurtmalar soni
+            orders_count = Order.objects.filter(assigned_to=employee).count()
+
+            # Hodim tomonidan bajarilgan buyurtmalar bo‘yicha tushum
+            total_revenue = \
+            Order.objects.filter(assigned_to=employee, status="completed").aggregate(Sum("total_price"))[
+                "total_price__sum"] or 0
+
+            # Hodimning oxirgi aktivligi
+            last_active = employee.last_login if employee.last_login else "Ma’lumot yo‘q"
+
+            data.append({
+                "employee_id": employee.id,
+                "full_name": f"{employee.first_name} {employee.last_name}",
+                "role": employee.role,  # Hodimning roli (oshpaz, kassir va h.k.)
+                "orders_count": orders_count,
+                "total_revenue": total_revenue,
+                "last_active": last_active
+            })
+
+        return Response({"employees": data})
