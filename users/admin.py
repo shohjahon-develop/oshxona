@@ -37,3 +37,7 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(Customer)
+
+
+# admin number = 930034867
+# admin password = 20062006
