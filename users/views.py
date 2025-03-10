@@ -9,24 +9,28 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User, Customer
 from .serializers import CustomerSerializer
 
+from django.contrib.auth import login
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+from .models import User
 
 class LoginView(APIView):
     def post(self, request):
-        phone = request.data.get("phone")
-        password = request.data.get("password")
+        pin_code = request.data.get("pin_code")
 
-        if not phone or not password:
-            return Response({"error": "Telefon raqam va parol talab qilinadi"}, status=status.HTTP_400_BAD_REQUEST)
+        if not pin_code:
+            return Response({"error": "PIN kod majburiy"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = authenticate(phone=phone, password=password)
-
-        if user is not None:
-            refresh = RefreshToken.for_user(user)
+        try:
+            user = User.objects.get(pin_code=pin_code)
+            login(request, user)  # Django session orqali login qilish
             return Response({
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-            })
-        return Response({"error": "Telefon raqam yoki parol noto‘g‘ri"}, status=status.HTTP_401_UNAUTHORIZED)
+                "message": "Muvaffaqiyatli tizimga kirdingiz",
+                "user": {"name": user.name, "role": user.role}
+            }, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "Noto‘g‘ri PIN kod"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 
