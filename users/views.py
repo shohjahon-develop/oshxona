@@ -24,16 +24,18 @@ class LoginView(APIView):
 
         try:
             user = User.objects.get(pin_code=pin_code)
-            login(request, user)  # Django session orqali login qilish
+            login(request, user)  # Django sessiyasi orqali login
+
+            # JWT token yaratish
+            refresh = RefreshToken.for_user(user)
             return Response({
                 "message": "Muvaffaqiyatli tizimga kirdingiz",
-                "user": {"name": user.name, "role": user.role}
+                "user": {"name": user.name, "role": user.role},
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
             }, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "Noto‘g‘ri PIN kod"}, status=status.HTTP_401_UNAUTHORIZED)
-
-
-
 
 
 
@@ -41,8 +43,13 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        request.user.auth_token.delete()
-        return Response({"message": "Tizimdan chiqildi"})
+        try:
+            refresh_token = request.data.get("refresh")
+            token = RefreshToken(refresh_token)
+            token.blacklist()  # Tokenni bekor qilish (agar blacklist ishlatilsa)
+            return Response({"message": "Tizimdan chiqildi"}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"error": "Xatolik yuz berdi"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
