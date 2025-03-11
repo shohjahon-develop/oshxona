@@ -10,24 +10,24 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ('phone', 'name', 'password', 'role')
+        fields = ('phone', 'name', 'password', 'role','pin_code')
 
 
 class CustomUserAdmin(UserAdmin):
     model = User
     add_form = UserCreationForm
-    list_display = ('name', 'phone', 'role', 'is_active')
+    list_display = ('name', 'phone', 'role','pin_code' ,'is_active')
     list_filter = ('role', 'is_active')
     ordering = ('name',)
 
     fieldsets = (
-        (None, {'fields': ('phone', 'name', 'password', 'role', 'is_active', 'is_staff')}),
+        (None, {'fields': ('phone', 'name', 'password', 'role','pin_code', 'is_active', 'is_staff')}),
     )
 
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('phone', 'name', 'password', 'role')}
+            'fields': ('phone', 'name', 'password', 'role','pin_code')}
          ),
     )
 
