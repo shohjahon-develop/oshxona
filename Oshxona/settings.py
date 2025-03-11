@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'reports',
     'roles',
     'drf_yasg',
+    'corsheaders',
     'rest_framework',
 ]
 
@@ -51,19 +52,51 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'users.User'
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+    ],
 }
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+
+# CORS sozlamalari
+CORS_ALLOW_ALL_ORIGINS = True  # Har qanday frontend domenidan so‘rovlarni qabul qilish (faqat test uchun!)
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS'
+]
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+    'x-requested-with'
+]
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    # "https://yourfrontend.com"
+]
+
 
 ROOT_URLCONF = 'Oshxona.urls'
 
