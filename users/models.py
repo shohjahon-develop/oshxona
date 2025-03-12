@@ -44,6 +44,15 @@ class User(AbstractBaseUser, PermissionsMixin):
         return f"{self.name} ({self.role})"
 
 
+class CustomerDelivery(models.Model):
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=15, unique=True)
+    address = models.TextField()
+
+    def __str__(self):
+        return f"{self.name} ({self.phone})"
+
+
 
 
 class Customer(models.Model):
