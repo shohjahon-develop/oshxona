@@ -10,7 +10,7 @@ class MenuItem(models.Model):
         ('hot food','Issiq Taomlar'),
         ('salat','Salatlar')
     )
-    img = models.ImageField(upload_to='images/')
+    img = models.ImageField(upload_to='menu_images/', null=True, blank=True)
     name = models.CharField(max_length=100)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     price = models.DecimalField(max_digits=10, decimal_places=2)

@@ -4,7 +4,4 @@ from .models import MenuItem
 class MenuItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = MenuItem
-        fields = ['id', 'name', 'category', 'price', 'available']
-        extra_kwargs = {
-            'img': {'required': True}
-        }
+        fields = '__all__'
