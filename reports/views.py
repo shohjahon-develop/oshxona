@@ -46,7 +46,7 @@ class PopularDishesView(APIView):
     def get(self, request):
         from orders.models import OrderItem  # OrderItem modeli kerak bo‘ladi
         popular_dishes = (
-            OrderItem.objects.values("dish__name")
+            OrderItem.objects.values("name")
             .annotate(total_count=Count("id"))
             .order_by("-total_count")[:3]
         )
