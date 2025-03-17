@@ -1,5 +1,8 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 from .models import *
 from .serializers import *
 
@@ -7,6 +10,15 @@ class TableViewSet(viewsets.ModelViewSet):
     queryset = Table.objects.all()
     serializer_class = TableSerializer
     permission_classes = [IsAuthenticated]
+
+
+    @action(detail=True, methods=['post'])
+    def toggle_occupancy(self, request, pk=None):
+        table = self.get_object()
+        table.is_occupied = not table.is_occupied  # Band yoki bo‘sh qilish
+        table.save()
+        return Response({'status': 'updated', 'is_occupied': table.is_occupied}, status=status.HTTP_200_OK)
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()

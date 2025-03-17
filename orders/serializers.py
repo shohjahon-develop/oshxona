@@ -3,6 +3,7 @@ from .models import Table, Order, OrderItem, Takeout, Delivery, TakeoutItem, Del
 
 
 class TableSerializer(serializers.ModelSerializer):
+    is_occupied = serializers.BooleanField(required=False)
     class Meta:
         model = Table
         fields = '__all__'

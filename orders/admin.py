@@ -29,7 +29,10 @@ class DeliveryAdmin(admin.ModelAdmin):
     list_filter = ('status',)
     inlines = [DeliveryItemInline]
 
-admin.site.register(Table)
+@admin.register(Table)
+class TableAdmin(admin.ModelAdmin):
+    list_display = ('number', 'place', 'is_occupied')  # Admin sahifasida ko‘rsatish
+    list_editable = ('is_occupied',)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(Takeout,TakeoutAdmin)
 admin.site.register(Delivery,DeliveryAdmin)
