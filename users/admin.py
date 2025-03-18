@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django import forms
-from .models import User, Customer
+from .models import User, Customer, CustomerDelivery
 
 
 # Admin panelda parol qo'shish uchun forma
@@ -37,6 +37,7 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(Customer)
+admin.site.register(CustomerDelivery)
 
 
 # admin number = 930034867

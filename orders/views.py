@@ -20,21 +20,46 @@ class TableViewSet(viewsets.ModelViewSet):
         return Response({'status': 'updated', 'is_occupied': table.is_occupied}, status=status.HTTP_200_OK)
 
 
+from rest_framework import viewsets
+from .models import Order, Takeout, Delivery
+from .serializers import OrderSerializer, TakeoutSerializer, DeliverySerializer
+
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]
 
+    def perform_create(self, serializer):
+        order = serializer.save()
+        order.calculate_total_price()  # ✅ Buyurtma yaratishda umumiy narx hisoblanadi
+
+    def perform_update(self, serializer):
+        order = serializer.save()
+        order.calculate_total_price()  # ✅ Buyurtma yangilansa umumiy narx qayta hisoblanadi
 
 class TakeoutViewSet(viewsets.ModelViewSet):
     queryset = Takeout.objects.all()
     serializer_class = TakeoutSerializer
-    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        order = serializer.save()
+        order.calculate_total_price()
+
+    def perform_update(self, serializer):
+        order = serializer.save()
+        order.calculate_total_price()
 
 class DeliveryViewSet(viewsets.ModelViewSet):
     queryset = Delivery.objects.all()
     serializer_class = DeliverySerializer
-    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        order = serializer.save()
+        order.calculate_total_price()
+
+    def perform_update(self, serializer):
+        order = serializer.save()
+        order.calculate_total_price()
+
 
 
 class OrderItemViewSet(viewsets.ModelViewSet):

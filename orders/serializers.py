@@ -8,11 +8,11 @@ class TableSerializer(serializers.ModelSerializer):
         model = Table
         fields = '__all__'
 
+
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = '__all__'
-
 
 class TakeoutItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,22 +26,24 @@ class DeliveryItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)  # ✅ total_price faqat o‘qish uchun
 
     class Meta:
         model = Order
-        fields = ['id', 'table', 'status', 'created_at', 'items']
+        fields = '__all__'
 
 class TakeoutSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True, read_only=True)
+    items = TakeoutItemSerializer(many=True, read_only=True)
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Takeout
-        fields = ['id', 'customer', 'status', 'created_at', 'items']
-
+        fields = '__all__'
 
 class DeliverySerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True, read_only=True)
+    items = DeliveryItemSerializer(many=True, read_only=True)
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Delivery
-        fields = ['id', 'customer', 'status', 'created_at', 'items']
+        fields = '__all__'

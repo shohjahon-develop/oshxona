@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import User, Customer
+from .models import *
 from .serializers import CustomerSerializer
 
 from django.contrib.auth import login
@@ -60,6 +60,10 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
 
 
+class CustomerDeliveryViewSet(viewsets.ModelViewSet):
+    queryset = CustomerDelivery.objects.all()
+    serializer_class = CustomerSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 
