@@ -36,6 +36,20 @@ class OrderViewSet(viewsets.ModelViewSet):
         order = serializer.save()
         order.calculate_total_price()  # ✅ Buyurtma yangilansa umumiy narx qayta hisoblanadi
 
+    def create(self, request, *args, **kwargs):
+        items_data = request.data.pop('items', [])  # Items ni ajratib olish
+
+        # Order yaratish
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+
+        # Items qo‘shish
+        for item in items_data:
+            OrderItem.objects.create(order=order, **item)
+
+        return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
 class TakeoutViewSet(viewsets.ModelViewSet):
     queryset = Takeout.objects.all()
     serializer_class = TakeoutSerializer
@@ -48,6 +62,21 @@ class TakeoutViewSet(viewsets.ModelViewSet):
         order = serializer.save()
         order.calculate_total_price()
 
+    def create(self, request, *args, **kwargs):
+        items_data = request.data.pop('items', [])  # Items ajratib olish
+
+        # Takeout order yaratish
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        takeout_order = serializer.save()
+
+        # Items qo‘shish
+        for item in items_data:
+            OrderItem.objects.create(order=takeout_order, **item)
+
+        return Response(TakeoutSerializer(takeout_order).data, status=status.HTTP_201_CREATED)
+
+
 class DeliveryViewSet(viewsets.ModelViewSet):
     queryset = Delivery.objects.all()
     serializer_class = DeliverySerializer
@@ -59,6 +88,20 @@ class DeliveryViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         order = serializer.save()
         order.calculate_total_price()
+
+    def create(self, request, *args, **kwargs):
+        items_data = request.data.pop('items', [])  # Items ajratib olish
+
+        # Delivery order yaratish
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        delivery_order = serializer.save()
+
+        # Items qo‘shish
+        for item in items_data:
+            OrderItem.objects.create(order=delivery_order, **item)
+
+        return Response(DeliverySerializer(delivery_order).data, status=status.HTTP_201_CREATED)
 
 
 
