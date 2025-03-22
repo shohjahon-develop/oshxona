@@ -28,16 +28,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
-    def perform_create(self, serializer):
-        order = serializer.save()
-        order.calculate_total_price()  # ✅ Buyurtma yaratishda umumiy narx hisoblanadi
-
-    def perform_update(self, serializer):
-        order = serializer.save()
-        order.calculate_total_price()  # ✅ Buyurtma yangilansa umumiy narx qayta hisoblanadi
-
     def create(self, request, *args, **kwargs):
-        items_data = request.data.pop('items', [])  # Items ni ajratib olish
+        items_data = request.data.pop('items', [])  # Items ajratib olish
 
         # Order yaratish
         serializer = self.get_serializer(data=request.data)
@@ -48,7 +40,18 @@ class OrderViewSet(viewsets.ModelViewSet):
         for item in items_data:
             OrderItem.objects.create(order=order, **item)
 
-        return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+        # Yangilangan serializer qaytarish
+        return Response(OrderSerializer(order, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+    def perform_create(self, serializer):
+        order = serializer.save()
+        order.calculate_total_price()  # ✅ Buyurtma yaratishda umumiy narx hisoblanadi
+
+    def perform_update(self, serializer):
+        order = serializer.save()
+        order.calculate_total_price()  # ✅ Buyurtma yangilansa umumiy narx qayta hisoblanadi
+
+
 
 class TakeoutViewSet(viewsets.ModelViewSet):
     queryset = Takeout.objects.all()

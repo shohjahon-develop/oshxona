@@ -25,7 +25,7 @@ class DeliveryItemSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = TakeoutItemSerializer(many=True,  source='items')
+    items = TakeoutItemSerializer(many=True)
     total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)  # ✅ total_price faqat o‘qish uchun
 
     class Meta:
@@ -33,7 +33,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TakeoutSerializer(serializers.ModelSerializer):
-    items = TakeoutItemSerializer(many=True, source='items')
+    items = TakeoutItemSerializer(many=True)
     total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
@@ -41,7 +41,7 @@ class TakeoutSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DeliverySerializer(serializers.ModelSerializer):
-    items = TakeoutItemSerializer(many=True,  source='items')
+    items = TakeoutItemSerializer(many=True)
     total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
