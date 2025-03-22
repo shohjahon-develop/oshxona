@@ -1,4 +1,4 @@
-from django.db import models, transaction
+from django.db import models
 from users.models import Customer, CustomerDelivery
 from menu.models import MenuItem
 
@@ -28,22 +28,10 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # ✅ Umumiy narx
 
-
     def calculate_total_price(self):
-        return sum(item.quantity * item.price for item in self.items.all())
-
-    def save(self, *args, **kwargs):
-        with transaction.atomic():
-            super().save(*args, **kwargs)
-            total_price = self.calculate_total_price()
-            if self.total_price != total_price:
-                self.total_price = total_price
-                super().save(update_fields=['total_price'])
-
-    def delete(self, *args, **kwargs):
-        for item in self.items.all():
-            item.delete()
-        super().delete(*args, **kwargs)
+        total = sum(item.menu_item.price * item.quantity for item in self.items.all())
+        self.total_price = total
+        self.save()
 
     def __str__(self):
         return f"Order {self.id} - {self.status} - Total: {self.total_price} so‘m"
