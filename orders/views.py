@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -11,11 +12,16 @@ class TableViewSet(viewsets.ModelViewSet):
     serializer_class = TableSerializer
     permission_classes = [IsAuthenticated]
 
-
     @action(detail=True, methods=['post'])
     def toggle_occupancy(self, request, pk=None):
         table = self.get_object()
-        table.is_occupied = not table.is_occupied  # Band yoki bo‘sh qilish
+
+        if table.is_occupied:
+            if table.orders.filter(is_paid=False).exists():
+                return Response({'error': 'Stolni bo‘shatish uchun barcha buyurtmalar to‘lanishi kerak.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        table.is_occupied = not table.is_occupied
         table.save()
         return Response({'status': 'updated', 'is_occupied': table.is_occupied}, status=status.HTTP_200_OK)
 
@@ -29,27 +35,21 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
 
     def create(self, request, *args, **kwargs):
-        items_data = request.data.pop('items', [])  # Items ajratib olish
+        items_data = request.data.pop('items', [])  # ✅ Itemsni ajratib olish
 
-        # Order yaratish
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        order = serializer.save()
+        with transaction.atomic():  # ✅ Transaction ishlatish
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            order = serializer.save()  # ✅ Buyurtmani saqlash
 
-        # Items qo‘shish
-        for item in items_data:
-            OrderItem.objects.create(order=order, **item)
+            # ✅ Itemsni bog‘lash
+            for item in items_data:
+                OrderItem.objects.create(order=order, menu_item_id=item["menu_item"], quantity=item["quantity"])
 
-        # Yangilangan serializer qaytarish
-        return Response(OrderSerializer(order, context={'request': request}).data, status=status.HTTP_201_CREATED)
+            order.calculate_total_price()  # ✅ Total narxni yangilash
 
-    def perform_create(self, serializer):
-        order = serializer.save()
-        order.calculate_total_price()  # ✅ Buyurtma yaratishda umumiy narx hisoblanadi
+        return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
-    def perform_update(self, serializer):
-        order = serializer.save()
-        order.calculate_total_price()  # ✅ Buyurtma yangilansa umumiy narx qayta hisoblanadi
 
 
 
@@ -57,54 +57,44 @@ class TakeoutViewSet(viewsets.ModelViewSet):
     queryset = Takeout.objects.all()
     serializer_class = TakeoutSerializer
 
-    def perform_create(self, serializer):
-        order = serializer.save()
-        order.calculate_total_price()
-
-    def perform_update(self, serializer):
-        order = serializer.save()
-        order.calculate_total_price()
-
     def create(self, request, *args, **kwargs):
-        items_data = request.data.pop('items', [])  # Items ajratib olish
+        items_data = request.data.pop('items', [])  # ✅ Itemsni ajratib olish
 
-        # Takeout order yaratish
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        takeout_order = serializer.save()
+        with transaction.atomic():  # ✅ Transaction ishlatish
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            takeout = serializer.save()  # ✅ Buyurtmani saqlash
 
-        # Items qo‘shish
-        for item in items_data:
-            OrderItem.objects.create(order=takeout_order, **item)
+            # ✅ Itemsni bog‘lash
+            for item in items_data:
+                TakeoutItem.objects.create(order=takeout, menu_item_id=item["menu_item"], quantity=item["quantity"])
 
-        return Response(TakeoutSerializer(takeout_order).data, status=status.HTTP_201_CREATED)
+            takeout.calculate_total_price()  # ✅ Total narxni yangilash
+
+        return Response(TakeoutSerializer(takeout).data, status=status.HTTP_201_CREATED)
+
 
 
 class DeliveryViewSet(viewsets.ModelViewSet):
     queryset = Delivery.objects.all()
     serializer_class = DeliverySerializer
 
-    def perform_create(self, serializer):
-        order = serializer.save()
-        order.calculate_total_price()
-
-    def perform_update(self, serializer):
-        order = serializer.save()
-        order.calculate_total_price()
-
     def create(self, request, *args, **kwargs):
-        items_data = request.data.pop('items', [])  # Items ajratib olish
+        items_data = request.data.pop('items', [])  # ✅ Itemsni ajratib olish
 
-        # Delivery order yaratish
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        delivery_order = serializer.save()
+        with transaction.atomic():  # ✅ Transaction ishlatish
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            delivery = serializer.save()  # ✅ Buyurtmani saqlash
 
-        # Items qo‘shish
-        for item in items_data:
-            OrderItem.objects.create(order=delivery_order, **item)
+            # ✅ Itemsni bog‘lash
+            for item in items_data:
+                DeliveryItem.objects.create(order=delivery, menu_item_id=item["menu_item"], quantity=item["quantity"])
 
-        return Response(DeliverySerializer(delivery_order).data, status=status.HTTP_201_CREATED)
+            delivery.calculate_total_price()  # ✅ Total narxni yangilash
+
+        return Response(DeliverySerializer(delivery).data, status=status.HTTP_201_CREATED)
+
 
 
 

@@ -24,26 +24,57 @@ class DeliveryItemSerializer(serializers.ModelSerializer):
         model = DeliveryItem
         fields = '__all__'
 
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
-    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)  # ✅ total_price faqat o‘qish uchun
 
     class Meta:
         model = Order
         fields = '__all__'
 
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        order = Order.objects.create(**validated_data)
+
+        for item in items_data:
+            OrderItem.objects.create(order=order, menu_item_id=item["menu_item"],
+                                     quantity=item["quantity"])  # ✅ To‘g‘ri bog‘lanish
+
+        order.calculate_total_price()  # ✅ Total narxni yangilash
+        return order
+
+
 class TakeoutSerializer(serializers.ModelSerializer):
     items = TakeoutItemSerializer(many=True)
-    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Takeout
         fields = '__all__'
 
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        takeout = Takeout.objects.create(**validated_data)
+
+        for item in items_data:
+            TakeoutItem.objects.create(order=takeout, menu_item_id=item["menu_item"], quantity=item["quantity"])  # ✅ To‘g‘ri bog‘lanish
+
+        takeout.calculate_total_price()  # ✅ Total narxni yangilash
+        return takeout
+
+
 class DeliverySerializer(serializers.ModelSerializer):
     items = DeliveryItemSerializer(many=True)
-    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Delivery
         fields = '__all__'
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        delivery = Delivery.objects.create(**validated_data)
+
+        for item in items_data:
+            DeliveryItem.objects.create(order=delivery, menu_item_id=item["menu_item"], quantity=item["quantity"])  # ✅ To‘g‘ri bog‘lanish
+
+        delivery.calculate_total_price()  # ✅ Total narxni yangilash
+        return delivery
