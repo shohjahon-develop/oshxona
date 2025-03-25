@@ -6,9 +6,7 @@ router.register(r'tables', TableViewSet)
 router.register(r'orders', OrderViewSet)
 router.register(r'takeout', TakeoutViewSet)
 router.register(r'delivery', DeliveryViewSet)
-router.register(r'order-items', OrderItemViewSet)
-router.register(r'takeout-items', TakeoutItemViewSet)
-router.register(r'delivery-items', DeliveryItemViewSet)
+
 
 urlpatterns = [
     path('', include(router.urls)),
