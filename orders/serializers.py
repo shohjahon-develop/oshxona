@@ -55,7 +55,7 @@ class TakeoutSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
         takeout = Takeout.objects.create(**validated_data)
 
-        takeout_items = [TakeoutItem(order=takeout, **item) for item in items_data]
+        takeout_items = [TakeoutItem(takeout=takeout, **item) for item in items_data] #bu kodni o'zgartirdim
         TakeoutItem.objects.bulk_create(takeout_items)
 
         takeout.calculate_total_price()
@@ -81,7 +81,7 @@ class DeliverySerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
         delivery = Delivery.objects.create(**validated_data)
 
-        delivery_items = [DeliveryItem(order=delivery, **item) for item in items_data]
+        delivery_items = [DeliveryItem(delivery=delivery, **item) for item in items_data] #order o'rniga delivery deb o'zgartiramiz!
         DeliveryItem.objects.bulk_create(delivery_items)
 
         delivery.calculate_total_price()

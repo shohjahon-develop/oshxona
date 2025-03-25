@@ -52,7 +52,7 @@ class Takeout(models.Model):
 
     def calculate_total_price(self):
         if self.items.exists():
-            self.total_price = sum(item.quantity * self.menu_item.price for item in self.items.all())
+            self.total_price = sum(item.quantity * item.menu_item.price for item in self.items.all())
             self.save()
 
 class Delivery(models.Model):
@@ -72,7 +72,7 @@ class Delivery(models.Model):
 
     def calculate_total_price(self):
         if self.items.exists():
-            self.total_price = sum(item.quantity * self.menu_item.price for item in self.items.all())
+            self.total_price = sum(item.quantity * item.menu_item.price for item in self.items.all())
             self.save()
 
 class OrderItem(models.Model):
