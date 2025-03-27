@@ -61,6 +61,11 @@ class TakeoutSerializer(serializers.ModelSerializer):
         takeout.calculate_total_price()
         return takeout
 
+    def update(self, instance, validated_data):
+        instance.status = validated_data.get('status', instance.status)
+        instance.save()
+        return instance
+
 class DeliveryItemSerializer(serializers.ModelSerializer):
     menu_item = serializers.PrimaryKeyRelatedField(queryset=MenuItem.objects.all())
 
@@ -76,6 +81,11 @@ class DeliverySerializer(serializers.ModelSerializer):
         model = Delivery
         fields = ['id', 'customer', 'status', 'total_price', 'items', 'created_at']
         read_only_fields = ['id', 'created_at', 'total_price']
+
+    def update(self, instance, validated_data):
+        instance.status = validated_data.get('status', instance.status)
+        instance.save()
+        return instance
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
