@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
+from rest_framework.views import APIView
 
 from .models import Table, Order, Takeout, Delivery
 from .serializers import TableSerializer, OrderSerializer, TakeoutSerializer, DeliverySerializer
@@ -57,3 +58,27 @@ class DeliveryViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_201_CREATED)
+
+
+
+
+
+class ServedOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        orders = Order.objects.filter(status='served')
+        takeouts = Takeout.objects.filter(status='served')
+        deliveries = Delivery.objects.filter(status='served')
+
+        orders_serializer = OrderSerializer(orders, many=True)
+        takeouts_serializer = TakeoutSerializer(takeouts, many=True)
+        deliveries_serializer = DeliverySerializer(deliveries, many=True)
+
+        data = {
+            'orders': orders_serializer.data,
+            'takeouts': takeouts_serializer.data,
+            'deliveries': deliveries_serializer.data,
+        }
+
+        return Response(data)

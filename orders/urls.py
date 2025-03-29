@@ -10,4 +10,5 @@ router.register(r'delivery', DeliveryViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('served-all/', ServedOrdersView.as_view(), name='served-all'),
 ]
