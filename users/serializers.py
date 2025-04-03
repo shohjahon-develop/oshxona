@@ -1,8 +1,17 @@
 from rest_framework import serializers
 from django.core.validators import RegexValidator
 
-from users.models import CustomerDelivery, Customer
+from users.models import CustomerDelivery, Customer, User
 
+
+class LoginSerializer(serializers.Serializer):
+    pin_code = serializers.CharField(required=True, help_text="PIN kod")
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
 
 class CustomerSerializer(serializers.ModelSerializer):
     phone_regex = RegexValidator(

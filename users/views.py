@@ -1,3 +1,4 @@
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -7,7 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import *
-from .serializers import CustomerSerializer, CustomerDeliverySerializer
+from .serializers import CustomerSerializer, CustomerDeliverySerializer, LoginSerializer, UserSerializer
 
 from django.contrib.auth import login
 from rest_framework.response import Response
@@ -16,26 +17,30 @@ from rest_framework import status
 from .models import User
 
 class LoginView(APIView):
+    @swagger_auto_schema(request_body=LoginSerializer,
+                         responses={200: UserSerializer,
+                                    400: 'Noto‘g‘ri ma’lumotlar'})
     def post(self, request):
-        pin_code = request.data.get("pin_code")
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            pin_code = serializer.validated_data['pin_code']
 
-        if not pin_code:
-            return Response({"error": "PIN kod majburiy"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                user = User.objects.get(pin_code=pin_code)
 
-        try:
-            user = User.objects.get(pin_code=pin_code)
-            login(request, user)  # Django sessiyasi orqali login
+                # JWT token yaratish
+                refresh = RefreshToken.for_user(user)
+                user_serializer = UserSerializer(user)
+                return Response({
+                    "message": "Muvaffaqiyatli tizimga kirdingiz",
+                    "user": user_serializer.data,  # To'liq user ma'lumotlari
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                }, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response({"error": "Noto‘g‘ri PIN kod"}, status=status.HTTP_401_UNAUTHORIZED)
 
-            # JWT token yaratish
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "message": "Muvaffaqiyatli tizimga kirdingiz",
-                "user": {"name": user.name, "role": user.role},
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            }, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "Noto‘g‘ri PIN kod"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
