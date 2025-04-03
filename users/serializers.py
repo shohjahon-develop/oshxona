@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.core.validators import RegexValidator
 
-from users.models import CustomerDelivery, Customer, User
+from users.models import CustomerDelivery, Customer, User, Setting
 
 
 class LoginSerializer(serializers.Serializer):
@@ -46,3 +46,16 @@ class CustomerDeliverySerializer(serializers.ModelSerializer):
         if any(char.isdigit() for char in value):
             raise serializers.ValidationError("Ismda raqam bo‘lishi mumkin emas.")
         return value
+
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
+
+
+class SettingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Setting
+        fields = '__all__'

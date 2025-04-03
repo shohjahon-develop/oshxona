@@ -1,14 +1,15 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import *
-from .serializers import CustomerSerializer, CustomerDeliverySerializer, LoginSerializer, UserSerializer
+from .serializers import CustomerSerializer, CustomerDeliverySerializer, LoginSerializer, UserSerializer, \
+    EmployeeSerializer, SettingSerializer
 
 from django.contrib.auth import login
 from rest_framework.response import Response
@@ -72,10 +73,19 @@ class CustomerDeliveryViewSet(viewsets.ModelViewSet):
 
 
 
+class EmployeeViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.filter(role__in=["waiter", "chef", "cashier", "cleaner"])  # Faqat xodimlarni olish
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]  # Faqat adminlar ko'rishi va o'zgartirishi mumkin
 
 
+class SettingAPIView(generics.RetrieveUpdateAPIView):
+    queryset = Setting.objects.all()
+    serializer_class = SettingSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
-
+    def get_object(self):
+        return self.queryset.first()  # Faqat bitta sozlama obyekti bo'lishi kerak
 
 
 

@@ -61,3 +61,16 @@ class Customer(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.phone})"
+
+
+class Setting(models.Model):
+    restaurant_name = models.CharField(max_length=200)
+    phone_number = models.CharField(max_length=15)
+    email = models.EmailField()
+    address = models.CharField(max_length=200)
+    description = models.TextField(default="Milliy va zamonaviy taomlar restorani")
+    currency = models.CharField(max_length=3, default="So'm (UZS)")
+    language = models.CharField(max_length=2, default="O'zbek")
+
+    def __str__(self):
+        return self.restaurant_name
