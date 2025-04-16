@@ -182,16 +182,16 @@ class RecentOrdersView(APIView):
 
         combined_list = []
         for order in orders:
-                combined_list.append({
-                    "id": order.id,
-                    "type": "Shu yerda",
-                    "customer_display": f"Stol {order.table.number}",
-                    "item_count": order.items.count(), # Yoki quantity summasi?
-                    "total_amount": order.total_price,
-                    "status": order.status, # Keyin serializerda tarjima qilinadi
-                    "status_display": order.get_status_display(),
-                    "created_at": order.created_at
-                })
+            combined_list.append({
+                "id": order.id,
+                "type": "Shu yerda",
+                "customer_display": f"Stol {order.table.number}",
+                "item_count": order.items.count(), # Yoki quantity summasi?
+                "total_amount": order.total_price,
+                "status": order.status, # Keyin serializerda tarjima qilinadi
+                "status_display": order.get_status_display(),
+                "created_at": order.created_at
+            })
         for takeout in takeouts:
              combined_list.append({
                  "id": takeout.id,
@@ -207,7 +207,7 @@ class RecentOrdersView(APIView):
              combined_list.append({
                  "id": delivery.id,
                  "type": "Yetkazib berish",
-                 "customer_display": f"{delivery.customer.name if delivery.customer else 'Noma\'lum'}",
+                 "customer_display": f"{delivery.customer.name if delivery.customer else "Noma\'lum"}",
                  "item_count": delivery.items.count(),
                  "total_amount": delivery.total_price,
                  "status": delivery.status,
