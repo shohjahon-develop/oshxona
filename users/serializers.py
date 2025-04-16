@@ -48,6 +48,34 @@ class CustomerDeliverySerializer(serializers.ModelSerializer):
         return value
 
 
+class DashboardSummarySerializer(serializers.Serializer):
+    today_sales = serializers.DecimalField(max_digits=15, decimal_places=2)
+    today_sales_change_percent = serializers.CharField(max_length=10)
+    today_orders_count = serializers.IntegerField()
+    today_orders_change_percent = serializers.CharField(max_length=10)
+    average_check = serializers.DecimalField(max_digits=15, decimal_places=2)
+    average_check_change_percent = serializers.CharField(max_length=10)
+    active_staff_count = serializers.IntegerField()
+    active_staff_change_percent = serializers.CharField(max_length=10)
+
+class WeeklySalesSerializer(serializers.Serializer):
+    labels = serializers.ListField(child=serializers.CharField(max_length=3)) # Hafta kunlari qisqartmasi (Du, Se...)
+    sales_data = serializers.ListField(child=serializers.DecimalField(max_digits=15, decimal_places=2))
+
+class TopProductSerializer(serializers.Serializer):
+    product_name = serializers.CharField(source='menu_item__name') # Corrected source
+    quantity_sold = serializers.IntegerField()
+    total_revenue = serializers.DecimalField(max_digits=15, decimal_places=2)
+
+class RecentOrderSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    type = serializers.CharField(max_length=20) # 'Shu yerda', 'Olib ketish', 'Yetkazib berish'
+    customer_display = serializers.CharField(max_length=100) # "Stol 3" yoki "Alisher (+998...)" yoki "Dilshod (+998...)"
+    item_count = serializers.IntegerField()
+    total_amount = serializers.DecimalField(max_digits=15, decimal_places=2)
+    status = serializers.CharField(max_length=50) # Statusning tarjimasi (Yakunlangan, Tayyorlanmoqda...)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M") # Formatni frontendga moslash
+
 
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,4 +86,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
 class SettingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Setting
-        fields = '__all__'
+        fields = [
+            'id', 'restaurant_name', 'phone_number', 'email', 'address',
+            'description', 'currency', 'language',
+            'tax_rate', 'service_charge' # Qo'shilgan maydonlar
+        ]

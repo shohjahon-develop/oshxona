@@ -66,10 +66,12 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
 
 
-class CustomerDeliveryViewSet(viewsets.ModelViewSet):
+class CustomerDeliveryViewSet(viewsets.ModelViewSet): # ReadOnlyModelViewSet o'rniga ModelViewSet
     queryset = CustomerDelivery.objects.all()
     serializer_class = CustomerDeliverySerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    # Permissionni o'zgartiramiz: Autentifikatsiyadan o'tganlar ko'rishi, adminlar o'zgartirishi mumkin
+    # Yoki IsAuthenticatedOrReadOnly - hamma ko'rishi, faqat ro'yxatdan o'tganlar o'zgartirishi
+    permission_classes = [IsAuthenticatedOrReadOnly] # Yoki [IsAuthenticated, IsAdminOrReadOnly] yoki [IsAuthenticated]
 
 
 

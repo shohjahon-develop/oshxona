@@ -68,6 +68,8 @@ class Setting(models.Model):
     phone_number = models.CharField(max_length=15)
     email = models.EmailField()
     address = models.CharField(max_length=200)
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    service_charge = models.DecimalField(max_digits=5, decimal_places=2, default=10.0)
     description = models.TextField(default="Milliy va zamonaviy taomlar restorani")
     currency = models.CharField(max_length=3, default="So'm (UZS)")
     language = models.CharField(max_length=2, default="O'zbek")

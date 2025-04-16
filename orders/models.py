@@ -1,6 +1,7 @@
 from django.db import models
 from menu.models import MenuItem
-from users.models import Customer, CustomerDelivery
+from users.models import Customer, CustomerDelivery, User
+
 
 class Table(models.Model):
     PLACE_CHOICE = [
@@ -66,6 +67,8 @@ class Delivery(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='assigned_deliveries', limit_choices_to={'role': 'delivery'})
 
     def __str__(self):
         return f"Delivery {self.id} - {self.status}"
