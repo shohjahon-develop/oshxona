@@ -196,7 +196,7 @@ class RecentOrdersView(APIView):
              combined_list.append({
                  "id": takeout.id,
                  "type": "Olib ketish",
-                 "customer_display": f"{takeout.customer.name if takeout.customer else "Nomalum"}",
+                 "customer_display": f"{takeout.customer.name if takeout.customer else 'Nomalum'}",
                  "item_count": takeout.items.count(),
                  "total_amount": takeout.total_price,
                  "status": takeout.status,
@@ -207,7 +207,7 @@ class RecentOrdersView(APIView):
              combined_list.append({
                  "id": delivery.id,
                  "type": "Yetkazib berish",
-                 "customer_display": f"{delivery.customer.name if delivery.customer else "Nomalum"}",
+                 "customer_display": f"{delivery.customer.name if delivery.customer else 'Nomalum'}",
                  "item_count": delivery.items.count(),
                  "total_amount": delivery.total_price,
                  "status": delivery.status,
