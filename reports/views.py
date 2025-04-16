@@ -195,7 +195,7 @@ class RecentOrdersView(APIView):
              combined_list.append({
                  "id": takeout.id,
                  "type": "Olib ketish",
-                 "customer_display": f"{takeout.customer.name if takeout.customer else 'Noma\'lum'}",
+                 "customer_display": f"{takeout.customer.name if takeout.customer else "Noma'lum"}",
                  "item_count": takeout.items.count(),
                  "total_amount": takeout.total_price,
                  "status": takeout.status,
