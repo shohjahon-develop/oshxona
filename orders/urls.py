@@ -13,7 +13,7 @@ router.register(r'delivery', DeliveryViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('served-all/', ServedOrdersView.as_view(), name='served-all'),
-    path('my-deliveries/', MyDeliveriesView.as_view(), name='my-deliveries'), # Yetkazib beruvchi uchun yangi URL
+    # path('my-deliveries/', MyDeliveriesView.as_view(), name='my-deliveries'), # Yetkazib beruvchi uchun yangi URL
 ]
 
 

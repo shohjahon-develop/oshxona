@@ -36,3 +36,14 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 # Kerak bo'lsa boshqa rollar uchun ham shunga o'xshash permission classlar yaratishingiz mumkin
 # Masalan: IsChefRole, IsCashierRole, IsWaiterRole
+
+
+class IsAdminOrDeliveryRole(permissions.BasePermission):
+    message = 'Bu amalni bajarish uchun Admin yoki Yetkazib beruvchi huquqi talab qilinadi.'
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user and
+            request.user.is_authenticated and
+            (request.user.role == 'admin' or request.user.role == 'delivery')
+        )

@@ -3,8 +3,7 @@ from rest_framework import serializers
 from menu.models import MenuItem
 from users.models import Customer, CustomerDelivery, User
 from .models import *
-from menu.serializers import MenuItemSerializer # Import MenuItemSerializer
-from users.serializers import CustomerSerializer, CustomerDeliverySerializer, UserSerializer # Import kerakli user serializerlar
+# Endi nested serializerlar kerak emas (MenuItemSerializer, CustomerSerializer va hk)
 
 class TableSerializer(serializers.ModelSerializer):
     place_display = serializers.CharField(source='get_place_display', read_only=True)
@@ -12,193 +11,147 @@ class TableSerializer(serializers.ModelSerializer):
         model = Table
         fields = ['id', 'number', 'is_occupied', 'place', 'place_display']
 
-# --- OrderItem, TakeoutItem, DeliveryItem uchun o'zgarish ---
+# --- Item Serializerlar (ID larga qaytish) ---
 class OrderItemSerializer(serializers.ModelSerializer):
-    # O'qish uchun: To'liq MenuItem ma'lumotlari
-    menu_item = MenuItemSerializer(read_only=True)
-    # Yozish uchun: Faqat MenuItem ID si
-    menu_item_id = serializers.PrimaryKeyRelatedField(
-        queryset=MenuItem.objects.all(), source='menu_item', write_only=True
-    )
-    item_total = serializers.SerializerMethodField() # Har bir item uchun umumiy narx
+    # Faqat ID orqali bog'lanish
+    menu_item = serializers.PrimaryKeyRelatedField(queryset=MenuItem.objects.all())
+    # menu_item_id = serializers.PrimaryKeyRelatedField(queryset=MenuItem.objects.all(), source='menu_item', write_only=True) # Bu kerak emas, yuqoridagi yetarli
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'menu_item', 'menu_item_id', 'quantity', 'item_total']
-        read_only_fields = ['id', 'item_total']
-
-    def get_item_total(self, obj):
-        return obj.quantity * obj.menu_item.price
+        fields = ['id', 'menu_item', 'quantity'] # item_total olib tashlandi
+        read_only_fields = ['id']
 
 class TakeoutItemSerializer(serializers.ModelSerializer):
-    menu_item = MenuItemSerializer(read_only=True)
-    menu_item_id = serializers.PrimaryKeyRelatedField(
-        queryset=MenuItem.objects.all(), source='menu_item', write_only=True
-    )
-    item_total = serializers.SerializerMethodField()
+    menu_item = serializers.PrimaryKeyRelatedField(queryset=MenuItem.objects.all())
 
     class Meta:
         model = TakeoutItem
-        fields = ['id', 'menu_item', 'menu_item_id', 'quantity', 'item_total']
-        read_only_fields = ['id', 'item_total']
-
-    def get_item_total(self, obj):
-        return obj.quantity * obj.menu_item.price
+        fields = ['id', 'menu_item', 'quantity']
+        read_only_fields = ['id']
 
 class DeliveryItemSerializer(serializers.ModelSerializer):
-    menu_item = MenuItemSerializer(read_only=True)
-    menu_item_id = serializers.PrimaryKeyRelatedField(
-        queryset=MenuItem.objects.all(), source='menu_item', write_only=True
-    )
-    item_total = serializers.SerializerMethodField()
+    menu_item = serializers.PrimaryKeyRelatedField(queryset=MenuItem.objects.all())
 
     class Meta:
         model = DeliveryItem
-        fields = ['id', 'menu_item', 'menu_item_id', 'quantity', 'item_total']
-        read_only_fields = ['id', 'item_total']
+        fields = ['id', 'menu_item', 'quantity']
+        read_only_fields = ['id']
 
-    def get_item_total(self, obj):
-        return obj.quantity * obj.menu_item.price
-
-# --- Order, Takeout, Delivery Serializerlar uchun o'zgarish ---
+# --- Order, Takeout, Delivery Serializerlar (Soddalashtirilgan) ---
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
-    table_details = TableSerializer(source='table', read_only=True) # Stol ma'lumotlari
-    table = serializers.PrimaryKeyRelatedField(queryset=Table.objects.all(), write_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True) # Status tarjimasi
+    # table_details olib tashlandi, faqat table (ID) qoladi
+    table = serializers.PrimaryKeyRelatedField(queryset=Table.objects.all()) # read_only=False (default)
+    status_display = serializers.CharField(source='get_status_display', read_only=True) # Bu qulay, qoldiramiz
 
     class Meta:
         model = Order
         fields = [
-            'id', 'table', 'table_details', 'status', 'status_display',
+            'id', 'table', 'status', 'status_display',
             'total_price', 'items', 'created_at'
         ]
-        read_only_fields = ['id', 'created_at', 'total_price', 'status_display', 'table_details']
+        read_only_fields = ['id', 'created_at', 'total_price', 'status_display']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
         order = Order.objects.create(**validated_data)
         total_price = 0
         order_items = []
+        # Yaratish uchun items_data ichida {menu_item: <MenuItem instance>, quantity: X} bo'lishi kutiladi
+        # yoki {menu_item_id: <ID>, quantity: X}
         for item_data in items_data:
-            menu_item = item_data['menu_item'] # write_only=True bo'lgani uchun 'menu_item' keladi
+            # Agar PrimaryKeyRelatedField ishlatilsa, menu_item object bo'ladi
+            menu_item_obj = item_data['menu_item']
             quantity = item_data['quantity']
-            order_items.append(OrderItem(order=order, menu_item=menu_item, quantity=quantity))
-            total_price += quantity * menu_item.price
+            order_items.append(OrderItem(order=order, menu_item=menu_item_obj, quantity=quantity))
+            total_price += quantity * menu_item_obj.price # Narxni o'qish
 
         OrderItem.objects.bulk_create(order_items)
         order.total_price = total_price
         order.save()
         return order
 
-    def update(self, instance, validated_data):
-        # Statusni update qilish logikasi (agar kerak bo'lsa, action orqali qilish yaxshiroq)
-        instance.status = validated_data.get('status', instance.status)
-        # Boshqa maydonlarni ham update qilish mumkin
-        instance.save()
-        # Agar items o'zgarsa, narxni qayta hisoblash kerak bo'lishi mumkin
-        return instance
+    # Update metodi kerak bo'lsa qoldiriladi, lekin asosan status uchun action ishlatiladi
+    # def update(self, instance, validated_data):
+    #     instance.status = validated_data.get('status', instance.status)
+    #     instance.save()
+    #     return instance
 
 class TakeoutSerializer(serializers.ModelSerializer):
     items = TakeoutItemSerializer(many=True)
-    # O'qish uchun Customer ma'lumotlari
-    customer = CustomerSerializer(read_only=True)
-    # Yozish uchun Customer ID si (majburiy emas)
-    customer_id = serializers.PrimaryKeyRelatedField(
-        queryset=Customer.objects.all(), source='customer',
-        write_only=True, required=False, allow_null=True
+    # customer (nested) olib tashlandi
+    customer = serializers.PrimaryKeyRelatedField(
+        queryset=Customer.objects.all(), required=False, allow_null=True # ID orqali bog'lanadi
     )
-    status_display = serializers.CharField(source='get_status_display', read_only=True) # Status tarjimasi
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
         model = Takeout
         fields = [
-            'id', 'customer', 'customer_id', 'status', 'status_display',
+            'id', 'customer', 'status', 'status_display',
             'total_price', 'items', 'created_at'
         ]
-        read_only_fields = ['id', 'created_at', 'total_price', 'status_display', 'customer']
+        read_only_fields = ['id', 'created_at', 'total_price', 'status_display']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
-        # customer_id orqali kelgan ma'lumotni customer ga o'tkazamiz
-        customer = validated_data.pop('customer', None) # source='customer' ishlatilgani uchun
-        takeout = Takeout.objects.create(customer=customer, **validated_data)
-
+        takeout = Takeout.objects.create(**validated_data) # customer ID orqali keladi
         total_price = 0
         takeout_items = []
         for item_data in items_data:
-            menu_item = item_data['menu_item']
+            menu_item_obj = item_data['menu_item']
             quantity = item_data['quantity']
-            takeout_items.append(TakeoutItem(takeout=takeout, menu_item=menu_item, quantity=quantity))
-            total_price += quantity * menu_item.price
+            takeout_items.append(TakeoutItem(takeout=takeout, menu_item=menu_item_obj, quantity=quantity))
+            total_price += quantity * menu_item_obj.price
 
         TakeoutItem.objects.bulk_create(takeout_items)
         takeout.total_price = total_price
         takeout.save()
         return takeout
 
-    def update(self, instance, validated_data):
-        instance.status = validated_data.get('status', instance.status)
-        instance.save()
-        return instance
-
 class DeliverySerializer(serializers.ModelSerializer):
     items = DeliveryItemSerializer(many=True)
-    # O'qish uchun CustomerDelivery ma'lumotlari
-    customer = CustomerDeliverySerializer(read_only=True)
-    # Yozish uchun CustomerDelivery ID si (majburiy emas)
-    customer_id = serializers.PrimaryKeyRelatedField(
-        queryset=CustomerDelivery.objects.all(), source='customer',
-        write_only=True, required=False, allow_null=True
+    # customer (nested) olib tashlandi
+    customer = serializers.PrimaryKeyRelatedField(
+        queryset=CustomerDelivery.objects.all(), required=False, allow_null=True # ID orqali bog'lanadi
     )
-    status_display = serializers.CharField(source='get_status_display', read_only=True) # Status tarjimasi
-    assigned_to_details = UserSerializer(source='assigned_to', read_only=True) # Yetkazib beruvchi ma'lumotlari
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    # assigned_to_details olib tashlandi
+    # assigned_to ni ham olib tashlaymiz, chunki kerak emas deyildi
+    # assigned_to = serializers.PrimaryKeyRelatedField(
+    #     queryset=User.objects.filter(role='delivery'), required=False, allow_null=True
+    # )
 
     class Meta:
         model = Delivery
         fields = [
-            'id', 'customer', 'customer_id', 'status', 'status_display',
-            'total_price', 'items', 'created_at', 'assigned_to', 'assigned_to_details'
+            'id', 'customer', 'status', 'status_display',
+            'total_price', 'items', 'created_at' # assigned_to olib tashlandi
         ]
         read_only_fields = [
-            'id', 'created_at', 'total_price', 'status_display',
-            'customer', 'assigned_to_details'
+            'id', 'created_at', 'total_price', 'status_display'
         ]
-        # `assigned_to` ni faqat adminlar yoki maxsus logikaga ko'ra o'zgartirish kerak bo'lishi mumkin
-        # Hozircha `assigned_to` ni ham `write_only` qilmaymiz, lekin API viewda cheklash mumkin
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
-        customer = validated_data.pop('customer', None)
-        # assigned_to ni ham pop qilish mumkin, agar create payti berilsa
-        assigned_to = validated_data.pop('assigned_to', None)
-
-        delivery = Delivery.objects.create(customer=customer, assigned_to=assigned_to, **validated_data)
-
+        # assigned_to logikasi olib tashlandi
+        delivery = Delivery.objects.create(**validated_data) # customer ID orqali keladi
         total_price = 0
         delivery_items = []
         for item_data in items_data:
-            menu_item = item_data['menu_item']
+            menu_item_obj = item_data['menu_item']
             quantity = item_data['quantity']
-            delivery_items.append(DeliveryItem(delivery=delivery, menu_item=menu_item, quantity=quantity))
-            total_price += quantity * menu_item.price
+            delivery_items.append(DeliveryItem(delivery=delivery, menu_item=menu_item_obj, quantity=quantity))
+            total_price += quantity * menu_item_obj.price
 
         DeliveryItem.objects.bulk_create(delivery_items)
         delivery.total_price = total_price
         delivery.save()
         return delivery
 
-    def update(self, instance, validated_data):
-        # Faqat status va assigned_to ni yangilashga ruxsat beramiz (misol)
-        instance.status = validated_data.get('status', instance.status)
-        # Admin yoki manager rolidagilar tayinlashi uchun:
-        # if request.user.role == 'admin': # Bu view ichida tekshiriladi
-        instance.assigned_to = validated_data.get('assigned_to', instance.assigned_to)
-        instance.save()
-        return instance
-
-# --- YANGI: Statusni yangilash uchun alohida serializer ---
+# --- Statusni yangilash uchun Serializerlar (o'zgarishsiz qoladi) ---
 class OrderStatusUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Order.STATUS_CHOICES)
 
@@ -208,17 +161,9 @@ class TakeoutStatusUpdateSerializer(serializers.Serializer):
 class DeliveryStatusUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Delivery.STATUS_CHOICES)
 
-# --- YANGI: Yetkazib beruvchiga tayinlash uchun serializer ---
-class DeliveryAssignSerializer(serializers.Serializer):
-    assigned_to_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.filter(role='delivery', is_active=True),
-        source='assigned_to', # Model field nomi
-        allow_null=True # Tayinlovni olib tashlash uchun
-    )
-
-
-
-
+# DeliveryAssignSerializer kerak emas
+# class DeliveryAssignSerializer(serializers.Serializer):
+#     ...
 
 
 

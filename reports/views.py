@@ -174,8 +174,6 @@ class RecentOrdersView(APIView):
     def get(self, request):
         limit = int(request.query_params.get('limit', 5))
 
-        # Oxirgi N ta buyurtmani olish (hamma turlardan)
-        # Buni samarali qilish uchun querylarni optimallashtirish kerak bo'lishi mumkin
         orders = Order.objects.all().order_by('-created_at')[:limit]
         takeouts = Takeout.objects.all().order_by('-created_at')[:limit]
         deliveries = Delivery.objects.all().order_by('-created_at')[:limit]
@@ -186,10 +184,10 @@ class RecentOrdersView(APIView):
                 "id": order.id,
                 "type": "Shu yerda",
                 "customer_display": f"Stol {order.table.number}",
-                "item_count": order.items.count(), # Yoki quantity summasi?
+                "item_count": order.items.count(),
                 "total_amount": order.total_price,
-                "status": order.status, # Keyin serializerda tarjima qilinadi
-                "status_display": order.get_status_display(),
+                "status": order.status, # Faqat status kodi
+                # "status_display": order.get_status_display(), # Olib tashlandi
                 "created_at": order.created_at
             })
         for takeout in takeouts:
@@ -200,10 +198,11 @@ class RecentOrdersView(APIView):
                  "item_count": takeout.items.count(),
                  "total_amount": takeout.total_price,
                  "status": takeout.status,
-                 "status_display": takeout.get_status_display(),
+                 # "status_display": takeout.get_status_display(), # Olib tashlandi
                  "created_at": takeout.created_at
              })
         for delivery in deliveries:
+             # Delivery modelida assigned_to yo'q endi
              combined_list.append({
                  "id": delivery.id,
                  "type": "Yetkazib berish",
@@ -211,20 +210,17 @@ class RecentOrdersView(APIView):
                  "item_count": delivery.items.count(),
                  "total_amount": delivery.total_price,
                  "status": delivery.status,
-                 "status_display": delivery.get_status_display(),
+                 # "status_display": delivery.get_status_display(), # Olib tashlandi
                  "created_at": delivery.created_at
              })
 
-        # Oxirgi yaratilganlar bo'yicha saralash
         combined_list.sort(key=lambda x: x['created_at'], reverse=True)
-
-        # Faqat limitdagilarni olish
         recent_orders_data = combined_list[:limit]
 
-        # Serializer ishlatishda ehtiyot bo'lish kerak, chunki data generic
-        # Biz o'zimiz dict yaratganimiz uchun, RecentOrderSerializer ni to'g'ridan-to'g'ri ishlatishimiz mumkin
+        # Soddalashtirilgan serializer
         serializer = RecentOrderSerializer(recent_orders_data, many=True)
         return Response(serializer.data)
+
 
 
 # --- Hisobotlar Sahifasi API Views ---
@@ -407,57 +403,22 @@ class StaffReportView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get(self, request):
-        period = request.query_params.get('period', 'weekly')
-        today = now().date()
-        start_date = today
-
-        if period == 'daily':
-            start_date = today
-        elif period == 'weekly':
-            start_date = today - timedelta(days=6)
-        elif period == 'monthly':
-            start_date = today - timedelta(days=29)
-        elif period == 'yearly':
-            start_date = today.replace(month=1, day=1)
-        else: # Default weekly
-            start_date = today - timedelta(days=6)
+        # Period parametri endi bu yerda ishlatilmaydi, chunki statistika yo'q
+        # period = request.query_params.get('period', 'weekly')
+        # today = now().date()
+        # start_date = today
+        # ... (period logikasi kerak emas)
 
         # Faqat xodimlarni olish (admin emas)
         staff = User.objects.filter(is_staff=False, is_superuser=False).exclude(role='admin')
 
-        # Yetkazib beruvchilar uchun statistikani hisoblash
-        delivery_stats = Delivery.objects.filter(
-                assigned_to__in=staff,
-                created_at__date__gte=start_date,
-                status='served'
-            ) \
-            .values('assigned_to') \
-            .annotate(
-                completed_deliveries_count=Count('id'),
-                total_delivery_sales=Sum('total_price'),
-                avg_delivery_check=Avg('total_price')
-            )
+        # Yetkazib beruvchilar uchun statistika hisoblash logikasi olib tashlandi
+        # delivery_stats = ...
+        # delivery_stats_dict = ...
 
-        delivery_stats_dict = {stat['assigned_to']: stat for stat in delivery_stats}
-
-        staff_data = []
-        for employee in staff:
-            emp_data = StaffReportSerializer(employee).data # Asosiy ma'lumotlar
-            stats = delivery_stats_dict.get(employee.id)
-            if stats:
-                 emp_data['completed_deliveries_count'] = stats['completed_deliveries_count']
-                 emp_data['total_delivery_sales'] = stats['total_delivery_sales']
-                 emp_data['avg_delivery_check'] = stats['avg_delivery_check']
-            else:
-                 emp_data['completed_deliveries_count'] = 0
-                 emp_data['total_delivery_sales'] = 0.0
-                 emp_data['avg_delivery_check'] = 0.0
-
-            # Boshqa rollar uchun ham statistika qo'shish mumkin (masalan, kassir uchun to'lovlar)
-            staff_data.append(emp_data)
-
-
-        return Response(staff_data)
+        # Faqat xodim ma'lumotlarini serializer orqali olish
+        serializer = StaffReportSerializer(staff, many=True)
+        return Response(serializer.data)
 
 
 class CustomerReportView(APIView):
@@ -655,20 +616,20 @@ class OrderStatisticsView(APIView):
 #         serializer = OrderStatisticsSerializer(data)
 #         return Response(serializer.data)
 #
-# class PopularDishesView(APIView):
-#     """Eng ko‘p buyurtma qilingan taomlar"""
-#
-#     def get(self, request):
-#         from orders.models import OrderItem  # OrderItem modeli kerak bo‘ladi
-#         popular_dishes = (
-#             OrderItem.objects.values("menu_item__name")
-#             .annotate(total_count=Count("id"))
-#             .order_by("-total_count")[:3]
-#         )
-#
-#         serializer = PopularDishesSerializer(popular_dishes, many=True)
-#         return Response(serializer.data)
-#
+class PopularDishesView(APIView):
+    """Eng ko‘p buyurtma qilingan taomlar"""
+
+    def get(self, request):
+        from orders.models import OrderItem  # OrderItem modeli kerak bo‘ladi
+        popular_dishes = (
+            OrderItem.objects.values("menu_item__name")
+            .annotate(total_count=Count("id"))
+            .order_by("-total_count")[:3]
+        )
+
+        serializer = PopularDishesSerializer(popular_dishes, many=True)
+        return Response(serializer.data)
+
 #
 # class EmployeeActivityReport(APIView):
 #     permission_classes = [IsAdminUser]  # Faqat adminlar ko‘rishi mumkin

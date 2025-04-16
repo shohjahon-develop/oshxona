@@ -62,13 +62,13 @@ class TopProductSerializer(serializers.Serializer):
 
 class RecentOrderSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    type = serializers.CharField(max_length=20) # 'Shu yerda', 'Olib ketish', 'Yetkazib berish'
-    customer_display = serializers.CharField(max_length=100) # "Stol 3" yoki "Alisher (+998...)"
+    type = serializers.CharField(max_length=20)
+    customer_display = serializers.CharField(max_length=100)
     item_count = serializers.IntegerField()
     total_amount = serializers.DecimalField(max_digits=15, decimal_places=2)
-    status_display = serializers.CharField(source='get_status_display', read_only=True) # Status tarjimasi
-    status = serializers.CharField(write_only=True) # Status kodi
-    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M") # Formatni frontendga moslash
+    status = serializers.CharField(max_length=50) # Faqat status kodini qaytaramiz
+    # status_display olib tashlandi
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M")
 
     # get_status_display ni qo'lda qo'shamiz, chunki bu generic serializer
     def get_status_display(self, obj):
@@ -98,23 +98,19 @@ class ProductReportSerializer(serializers.Serializer):
     # profit = serializers.DecimalField(max_digits=15, decimal_places=2) # Tannarx kerak
 
 class StaffReportSerializer(serializers.ModelSerializer): # User modelini ishlatamiz
-    # orders_served = serializers.IntegerField() # Bu endi aniq emas qaysi order kimniki
-    # total_sales = serializers.DecimalField(max_digits=15, decimal_places=2) # Bu ham
-    # average_check = serializers.DecimalField(max_digits=15, decimal_places=2) # Bu ham
     role_display = serializers.CharField(source='get_role_display', read_only=True)
-    # Yetkazib beruvchi uchun alohida statistika
-    completed_deliveries_count = serializers.IntegerField(read_only=True, default=0)
-    total_delivery_sales = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True, default=0)
-    avg_delivery_check = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True, default=0)
+    # Yetkazib beruvchi statistikasi olib tashlandi
+    # completed_deliveries_count = serializers.IntegerField(read_only=True, default=0)
+    # total_delivery_sales = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True, default=0)
+    # avg_delivery_check = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True, default=0)
 
     class Meta:
         model = User
+        # Faqat asosiy ma'lumotlar qoldi
         fields = [
-            'id', 'name', 'role', 'role_display', 'is_active', 'pin_code',
-            # Qo'shimcha statistika maydonlari:
-            'completed_deliveries_count', 'total_delivery_sales', 'avg_delivery_check',
+            'id', 'name', 'role', 'role_display', 'is_active', 'pin_code', 'phone' # phone ham qo'shildi
         ]
-        read_only_fields = fields # Hamma maydon read_only
+        read_only_fields = fields
 
 class CustomerReportSerializer(serializers.Serializer):
     # customer_type = serializers.CharField() # 'Shu yerda', 'Olib ketish (Doimiy)', 'Olib ketish (Yangi)', 'Yetkazib berish'
