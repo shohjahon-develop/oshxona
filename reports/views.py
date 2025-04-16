@@ -204,7 +204,7 @@ class RecentOrdersView(APIView):
                  "created_at": takeout.created_at
             })
         for delivery in deliveries:
-             combined_list.append({
+            combined_list.append({
                  "id": delivery.id,
                  "type": "Yetkazib berish",
                  "customer_display": f"{delivery.customer.name if delivery.customer else 'Noma\'lum'}",
@@ -213,7 +213,7 @@ class RecentOrdersView(APIView):
                  "status": delivery.status,
                  "status_display": delivery.get_status_display(),
                  "created_at": delivery.created_at
-             })
+            })
 
         # Oxirgi yaratilganlar bo'yicha saralash
         combined_list.sort(key=lambda x: x['created_at'], reverse=True)
