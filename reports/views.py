@@ -1,4 +1,5 @@
 # reports/views.py
+from rest_framework import status
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -192,7 +193,7 @@ class RecentOrdersView(APIView):
                 "created_at": order.created_at
             })
         for takeout in takeouts:
-             combined_list.append({
+            combined_list.append({
                  "id": takeout.id,
                  "type": "Olib ketish",
                  "customer_display": f"{takeout.customer.name if takeout.customer else "Noma'lum"}",
@@ -201,7 +202,7 @@ class RecentOrdersView(APIView):
                  "status": takeout.status,
                  "status_display": takeout.get_status_display(),
                  "created_at": takeout.created_at
-             })
+            })
         for delivery in deliveries:
              combined_list.append({
                  "id": delivery.id,
