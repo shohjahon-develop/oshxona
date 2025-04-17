@@ -76,7 +76,7 @@ class TakeoutViewSet(viewsets.ModelViewSet):
 class DeliveryViewSet(viewsets.ModelViewSet):
     queryset = Delivery.objects.all()
     serializer_class = DeliverySerializer # Soddalashtirilgan serializer
-    permission_classes = [IsAuthenticated,IsAdminOrDeliveryRole]
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         method='patch',

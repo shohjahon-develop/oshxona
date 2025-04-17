@@ -118,11 +118,7 @@ class DeliverySerializer(serializers.ModelSerializer):
         queryset=CustomerDelivery.objects.all(), required=False, allow_null=True # ID orqali bog'lanadi
     )
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    # assigned_to_details olib tashlandi
-    # assigned_to ni ham olib tashlaymiz, chunki kerak emas deyildi
-    # assigned_to = serializers.PrimaryKeyRelatedField(
-    #     queryset=User.objects.filter(role='delivery'), required=False, allow_null=True
-    # )
+
 
     class Meta:
         model = Delivery
@@ -150,7 +146,7 @@ class DeliverySerializer(serializers.ModelSerializer):
         delivery.total_price = total_price
         delivery.save()
         return delivery
-
+# 996700720
 # --- Statusni yangilash uchun Serializerlar (o'zgarishsiz qoladi) ---
 class OrderStatusUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Order.STATUS_CHOICES)
